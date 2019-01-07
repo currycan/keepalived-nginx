@@ -16,10 +16,14 @@ set -e
 
 nginx_install() {
     echo ">>> install keepalived"
-    yum -y install epel-release nginx
+    rpm -Uvh http://nginx.org/packages/centos/7/noarch/RPMS/nginx-release-centos-7-0.el7.ngx.noarch.rpm
+    yum -y install nginx
+    setenforce 0
+    sed -i /etc/selinux/config -r -e 's/^SELINUX=.*/SELINUX=disabled/g'
     \curl -so /etc/init.d/nginx https://raw.githubusercontent.com/currycan/keepalived-nginx/master/nginx
     chmod 755 /etc/init.d/nginx
     chkconfig --add /etc/init.d/nginx
+    chkconfig nginx on
     echo ">>>> nginx installation done <<<<"
 }
 
@@ -39,6 +43,7 @@ keepalived_install() {
     cp ./keepalived/etc/init.d/keepalived /etc/init.d/
     chmod 755 /etc/init.d/keepalived
     chkconfig --add /etc/init.d/keepalived
+    chkconfig keepalived on
     cd ..
     rm -rf keepalived-$VERSION
     rm -rf keepalived-$VERSION.tar.gz
