@@ -58,8 +58,8 @@ sed_conf() {
 }
 
 
-NET_DEV=`ip route|awk '/default/ { print $5 }'`
-AUTH_PASS=`cat /dev/urandom | tr -dc A-Z-a-z-0-9 | head -c ${LEN:-16}`
+# NET_DEV=`ip route|awk '/default/ { print $5 }'`
+# AUTH_PASS=`cat /dev/urandom | tr -dc A-Z-a-z-0-9 | head -c ${LEN:-16}`
 config() {
     \curl -so /etc/keepalived/keepalived.conf https://raw.githubusercontent.com/currycan/keepalived-nginx/master/keepalived_sample.conf
     \curl -so /etc/keepalived/check_nginx_alive.sh https://raw.githubusercontent.com/currycan/keepalived-nginx/master/check_nginx_alive.sh
@@ -67,10 +67,21 @@ config() {
     \curl -so /etc/keepalived/to_fault.sh https://raw.githubusercontent.com/currycan/keepalived-nginx/master/to_fault.sh
     \curl -so /etc/keepalived/to_master.sh https://raw.githubusercontent.com/currycan/keepalived-nginx/master/to_master.sh
     chmod 770 /etc/keepalived/*.sh
-    parameters=(ROLE1 NET_DEV PRIORITY1 AUTH_PASS IP_MASK1 ROLE2 PRIORITY2 IP_MASK2)
+    parameters=(ROLE1 NET_DEV PRIORITY1 AUTH_PASS IP_MASK1 ROLE2 PRIORITY2 IP_MASK2 VIR_ID1 VIR_ID2)
     echo -e " ${Green_font_prefix}配置集群keepalived.conf${Font_color_suffix}"
-    read -p "请输入虚IP1/MASK[如：192.168.39.22/24]:" IP_MASK1
-    read -p "请输入虚IP2/MASK[如：192.168.39.33/24]:" IP_MASK2
+    read -p "请输入要虚拟网卡设备名[如：enp5s0]:" NET_DEV
+    stty erase '^H' && read -p "keepalive是否为互为主备(双虚IP)? [Y/n] :" yn
+    [ -z "${yn}" ] && yn="y"
+    if [[ $yn == [Yy] ]]; then
+        read -p "请输入虚IP1/MASK[如：192.168.39.22/24]:" IP_MASK1
+        read -p "请输入虚IP2/MASK[如：192.168.39.33/24]:" IP_MASK2
+        read -p "请输入虚IP1 virtual id[两个节点设置必须一样,同一局域网内若有多个keepalive服务，值必须不同，取值范围：0-255，如：11]:" VIR_ID1
+        read -p "请输入虚IP2 virtual id[两个节点设置必须一样,同一局域网内若有多个keepalive服务，值必须不同，取值范围：0-255，如：22]:" VIR_ID2
+    else
+        read -p "请输入虚IP/MASK[如：192.168.39.22/24]:" IP_MASK1
+        read -p "请输入虚IP virtual id[两个节点设置必须一样,同一局域网内若有多个keepalive服务，值必须不同，取值范围：0-255]:" VIR_ID1
+        sed -i '38,65d' /etc/keepalived/keepalived.conf
+    fi
 }
 
 master_config() {
