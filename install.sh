@@ -17,7 +17,7 @@ set -e
 nginx_install() {
     echo ">>> install keepalived"
     rpm -Uvh http://nginx.org/packages/centos/7/noarch/RPMS/nginx-release-centos-7-0.el7.ngx.noarch.rpm
-    yum -y install nginx
+    yum -y install nginx mailx
     setenforce 0
     sed -i /etc/selinux/config -r -e 's/^SELINUX=.*/SELINUX=disabled/g'
     \curl -so /etc/init.d/nginx https://raw.githubusercontent.com/currycan/keepalived-nginx/master/nginx
@@ -67,21 +67,27 @@ config() {
     \curl -so /etc/keepalived/to_fault.sh https://raw.githubusercontent.com/currycan/keepalived-nginx/master/to_fault.sh
     \curl -so /etc/keepalived/to_master.sh https://raw.githubusercontent.com/currycan/keepalived-nginx/master/to_master.sh
     chmod 770 /etc/keepalived/*.sh
-    parameters=(ROLE1 NET_DEV PRIORITY1 AUTH_PASS IP_MASK1 ROLE2 PRIORITY2 IP_MASK2 VIR_ID1 VIR_ID2)
+    parameters=(ROLE1 NET_DEV PRIORITY1 AUTH_PASS IP_MASK1 ROLE2 PRIORITY2 IP_MASK2 VIR_ID1 VIR_ID2 HOST_IP ANOTHER_HOST_IP)
     echo -e " ${Green_font_prefix}配置集群keepalived.conf${Font_color_suffix}"
     read -p "请输入要虚拟网卡设备名[如：enp5s0]:" NET_DEV
     stty erase '^H' && read -p "keepalive是否为互为主备(双虚IP)? [Y/n] :" yn
     [ -z "${yn}" ] && yn="y"
     if [[ $yn == [Yy] ]]; then
+        read -p "请输入本机IP地址[如：192.168.39.2]:" HOST_IP
+        read -p "请输入另一主机IP地址[如：192.168.39.3]" ANOTHER_HOST_IP
         read -p "请输入虚IP1/MASK[如：192.168.39.22/24]:" IP_MASK1
         read -p "请输入虚IP2/MASK[如：192.168.39.33/24]:" IP_MASK2
         read -p "请输入虚IP1 virtual id[两个节点设置必须一样,同一局域网内若有多个keepalive服务，值必须不同，取值范围：0-255，如：11]:" VIR_ID1
         read -p "请输入虚IP2 virtual id[两个节点设置必须一样,同一局域网内若有多个keepalive服务，值必须不同，取值范围：0-255，如：22]:" VIR_ID2
     else
+        read -p "请输入本机IP地址[如：192.168.39.2]:" HOST_IP
+        read -p "请输入另一主机IP地址[如：192.168.39.3]" ANOTHER_HOST_IP
         read -p "请输入虚IP/MASK[如：192.168.39.22/24]:" IP_MASK1
         read -p "请输入虚IP virtual id[两个节点设置必须一样,同一局域网内若有多个keepalive服务，值必须不同，取值范围：0-255]:" VIR_ID1
         sed -i '38,65d' /etc/keepalived/keepalived.conf
     fi
+    read -p "请输入用于异常告警的邮件地址[如：zhangsan@fmsh.com.cn]:" EMAIL_ADDR
+    sed -e "s/\${EMAIL_ADDR}/$EMAIL_ADDR/g" -i /etc/keepalived/*.sh
 }
 
 master_config() {
