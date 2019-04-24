@@ -84,7 +84,7 @@ config() {
         read -p "请输入另一主机IP地址[如：192.168.39.3]" ANOTHER_HOST_IP
         read -p "请输入虚IP/MASK[如：192.168.39.22/24]:" IP_MASK1
         read -p "请输入虚IP virtual id[两个节点设置必须一样,同一局域网内若有多个keepalive服务，值必须不同，取值范围：0-255]:" VIR_ID1
-        sed -i '38,65d' /etc/keepalived/keepalived.conf
+        sed -i '43,75d' /etc/keepalived/keepalived.conf
     fi
     read -p "请输入用于异常告警的邮件地址[如：zhangsan@fmsh.com.cn]:" EMAIL_ADDR
     sed -e "s/\${EMAIL_ADDR}/$EMAIL_ADDR/g" -i /etc/keepalived/*.sh
